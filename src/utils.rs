@@ -29,7 +29,7 @@ pub fn clock_read_overhead_sum(clock: &Clock, num_iterations: Count) -> Duration
     all(target_arch = "x86", not(target_env = "sgx"), target_feature = "sse"),
     all(target_arch = "x86_64", not(target_env = "sgx"))
 ))]
-pub fn get_cpuid() -> Option<raw_cpuid::CpuId> {
+pub fn get_cpuid() -> Option<raw_cpuid::CpuId<raw_cpuid::native_cpuid::CpuIdReaderNative>> {
     Some(raw_cpuid::CpuId::default())
 }
 
@@ -54,7 +54,7 @@ pub fn assert_rdtsc_usable(clock: &quanta::Clock) {
 
     const NUM_ITERS: Count = 10_000;
     let clock_read_overhead =
-        clock_read_overhead_sum(&clock, NUM_ITERS).as_nanos() as f64 / NUM_ITERS as f64;
+        clock_read_overhead_sum(clock, NUM_ITERS).as_nanos() as f64 / NUM_ITERS as f64;
     eprintln!(
         "Reading the clock via RDTSC takes {:.2}ns",
         clock_read_overhead

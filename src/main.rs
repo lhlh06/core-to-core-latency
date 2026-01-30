@@ -28,24 +28,11 @@ pub struct CliArgs {
     /// 1: CAS latency on a single shared cache line. {n}
     /// 2: Single-writer single-reader latency on two shared cache lines. {n}
     /// 3: One writer and one reader on many cache line, using the clock. {n}
-    #[clap(
-        short,
-        long,
-        default_value = "1",
-        require_delimiter = true,
-        value_delimiter = ',',
-        value_parser
-    )]
+    #[clap(short, long, default_value = "1", value_delimiter = ',', value_parser)]
     bench: Vec<usize>,
 
     /// Specify the cores by id that should be used, comma delimited. By default all cores are used.
-    #[clap(
-        short,
-        long,
-        require_delimiter = true,
-        value_delimiter = ',',
-        value_parser
-    )]
+    #[clap(short, long, value_delimiter = ',', value_parser)]
     cores: Vec<usize>,
 }
 

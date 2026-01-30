@@ -4,17 +4,16 @@ description = "Measures CPU core-to-core latency"
 repository = "https://github.com/lhlh06/core-to-core-latency"
 license = "MIT"
 readme = "README.md"
-version = "1.2.0"
+version = "1.3.0"
 edition = "2024"
 exclude = ["/results"]
 
 [dependencies]
-core_affinity = "0.5"
-quanta = "0.10"
-clap = { version = "3", features = ["derive"] }
-ndarray = "0.15"
+core_affinity = "0.8"
+quanta = "0.12"
+clap = { version = "4", features = ["derive"] }
+ndarray = "0.17"
 ansi_term = "0.12"
-ordered-float = "3"
-cache-padded = "1.2"
+ordered-float = "5"
 crossbeam-utils = { version = "0.8", default-features = false }
-raw-cpuid = "10"
+raw-cpuid = "11"

@@ -5,7 +5,7 @@ pub mod read_write;
 use crate::CliArgs;
 use ansi_term::Color;
 use core_affinity::CoreId;
-use ndarray::{s, Axis};
+use ndarray::{Axis, s};
 use ordered_float::NotNan;
 use quanta::Clock;
 use std::io::Write;
