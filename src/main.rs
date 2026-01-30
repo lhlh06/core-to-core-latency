@@ -1,17 +1,16 @@
 mod bench;
 mod utils;
 
+use crate::bench::run_bench;
 use bench::Count;
-use std::sync::Arc;
 use clap::Parser;
 use quanta::Clock;
-use crate::bench::run_bench;
+use std::sync::Arc;
 
 const DEFAULT_NUM_SAMPLES: Count = 300;
 const DEFAULT_NUM_ITERATIONS_PER_SAMPLE: Count = 1000;
 
-#[derive(Clone)]
-#[derive(clap::Parser)]
+#[derive(Clone, clap::Parser)]
 pub struct CliArgs {
     /// The number of iterations per sample
     #[clap(default_value_t = DEFAULT_NUM_ITERATIONS_PER_SAMPLE, value_parser)]
@@ -29,11 +28,24 @@ pub struct CliArgs {
     /// 1: CAS latency on a single shared cache line. {n}
     /// 2: Single-writer single-reader latency on two shared cache lines. {n}
     /// 3: One writer and one reader on many cache line, using the clock. {n}
-    #[clap(short, long, default_value="1", require_delimiter=true, value_delimiter=',', value_parser)]
+    #[clap(
+        short,
+        long,
+        default_value = "1",
+        require_delimiter = true,
+        value_delimiter = ',',
+        value_parser
+    )]
     bench: Vec<usize>,
 
     /// Specify the cores by id that should be used, comma delimited. By default all cores are used.
-    #[clap(short, long, require_delimiter=true, value_delimiter=',', value_parser)]
+    #[clap(
+        short,
+        long,
+        require_delimiter = true,
+        value_delimiter = ',',
+        value_parser
+    )]
     cores: Vec<usize>,
 }
 
@@ -43,9 +55,15 @@ fn main() {
     let cores = core_affinity::get_core_ids().expect("get_core_ids() failed");
 
     let cores = if !args.cores.is_empty() {
-        args.cores.iter().copied()
-            .map(|cid| *cores.iter().find(|c| c.id == cid)
-                .unwrap_or_else(||panic!("Core {} not found. Available: {:?}", cid, &cores)))
+        args.cores
+            .iter()
+            .copied()
+            .map(|cid| {
+                *cores
+                    .iter()
+                    .find(|c| c.id == cid)
+                    .unwrap_or_else(|| panic!("Core {} not found. Available: {:?}", cid, &cores))
+            })
             .collect()
     } else {
         cores
@@ -79,7 +97,12 @@ fn main() {
                 eprintln!();
                 eprintln!("3) Message passing. One writer and one reader on many cache line");
                 eprintln!();
-                run_bench(&cores, &clock, &args, bench::msg_passing::Bench::new(args.num_iterations));
+                run_bench(
+                    &cores,
+                    &clock,
+                    &args,
+                    bench::msg_passing::Bench::new(args.num_iterations),
+                );
             }
             _ => panic!("--bench should be 1, 2 or 3"),
         }
