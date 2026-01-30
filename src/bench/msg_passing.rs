@@ -1,8 +1,8 @@
 use cache_padded::CachePadded;
 use core_affinity::CoreId;
-use std::sync::Barrier;
-use std::sync::atomic::{Ordering, AtomicU64};
 use quanta::Clock;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Barrier;
 
 use super::Count;
 use crate::utils;
@@ -14,7 +14,9 @@ pub struct Bench {
 
 impl Bench {
     pub fn new(num_iterations: u32) -> Self {
-        let clocks = (0..num_iterations as usize).map(|_| Default::default()).collect();
+        let clocks = (0..num_iterations as usize)
+            .map(|_| Default::default())
+            .collect();
         Self {
             barrier: Barrier::new(2),
             clocks,
@@ -24,7 +26,9 @@ impl Bench {
 
 impl super::Bench for Bench {
     // This test is not symmetric. We are doing one-way message passing.
-    fn is_symmetric(&self) -> bool { false }
+    fn is_symmetric(&self) -> bool {
+        false
+    }
 
     fn run(
         &self,
@@ -58,7 +62,10 @@ impl super::Bench for Bench {
                     }
                     state.barrier.wait();
 
-                    let total_latency = clock.delta(0, latency).saturating_sub(clock_read_overhead_sum).as_nanos();
+                    let total_latency = clock
+                        .delta(0, latency)
+                        .saturating_sub(clock_read_overhead_sum)
+                        .as_nanos();
                     results.push(total_latency as f64 / num_iterations as f64);
                 }
 
@@ -92,7 +99,8 @@ impl super::Bench for Bench {
 
             sender.join().unwrap();
             receiver.join().unwrap()
-        }).unwrap()
+        })
+        .unwrap()
     }
 }
 
