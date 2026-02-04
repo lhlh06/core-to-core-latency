@@ -53,7 +53,8 @@ pub fn run_bench(cores: &[CoreId], clock: &Clock, args: &CliArgs, bench: impl Be
     for i in 0..n_cores {
         let core_i = cores[i];
         eprint!("    {: >3}", core_i.id);
-        for j in 0..n_cores {
+        // for j in (0..n_cores).into_iter() {
+        for (j, &core_j) in cores.iter().enumerate().take(n_cores) {
             if bench.is_symmetric() {
                 if i <= j {
                     continue;
@@ -63,7 +64,7 @@ pub fn run_bench(cores: &[CoreId], clock: &Clock, args: &CliArgs, bench: impl Be
                 continue;
             }
 
-            let core_j = cores[j];
+            // let core_j = cores[j];
             // We add 1 warmup cycle first
             let durations = bench.run((core_i, core_j), clock, num_iterations, 1 + num_samples);
             let durations = &durations[1..];

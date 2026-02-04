@@ -1,8 +1,8 @@
 use super::Count;
 use core_affinity::CoreId;
 use quanta::Clock;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Barrier;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 const PING: bool = false;
 const PONG: bool = true;
