@@ -62,13 +62,15 @@ impl super::Bench for Bench {
 
                 state.barrier.wait();
                 let overhead =
-                    crate::utils::measure_overhead_ns(clock, num_samples.try_into().unwrap());
+                    crate::utils::measure_tsc_overhead_ns(clock, num_samples.try_into().unwrap());
+                // crate::utils::measure_overhead_ns(clock, num_samples.try_into().unwrap());
                 state.start.store(true, Ordering::Release);
 
                 let mut v = true;
                 for _ in 0..num_samples {
                     // let start = clock.raw();
-                    let start = crate::utils::raw_fenced(clock);
+                    // let start = crate::utils::raw_fenced(clock);
+                    let start = crate::utils::tsc_start();
                     for _ in 0..num_round_trips {
                         // Acquire -> Release is important to enforce a causal dependency
                         // This has no effect on x86
@@ -77,7 +79,8 @@ impl super::Bench for Bench {
                         v = !v;
                     }
                     // let end = clock.raw();
-                    let end = crate::utils::raw_fenced(clock);
+                    // let end = crate::utils::raw_fenced(clock);
+                    let end = crate::utils::tsc_end();
                     let duration = clock.delta(start, end).as_nanos() as u64;
                     let duration = duration.saturating_sub(overhead);
                     results.push(duration as f64 / num_round_trips as f64 / 2.0);

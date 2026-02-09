@@ -30,6 +30,45 @@ pub fn delay_cycles(num_iterations: usize) {
     }
 }
 
+#[cfg(all(target_arch = "x86_64", target_feature = "sse2"))]
+#[inline(always)]
+pub fn tsc_start() -> u64 {
+    use std::arch::x86_64::{_mm_lfence, _rdtsc};
+    unsafe {
+        _mm_lfence();
+        let tsc = _rdtsc();
+        _mm_lfence();
+
+        tsc
+    }
+}
+
+#[cfg(all(target_arch = "x86_64", target_feature = "sse2"))]
+#[inline(always)]
+pub fn tsc_end() -> u64 {
+    use std::arch::x86_64::{__rdtscp, _mm_lfence};
+    let mut aux = 0;
+    unsafe {
+        let tsc: u64 = __rdtscp(&mut aux);
+        _mm_lfence();
+        tsc
+    }
+}
+
+pub fn measure_tsc_overhead_ns(clock: &Clock, num_iterations: usize) -> u64 {
+    let mut overhead = Vec::with_capacity(num_iterations);
+
+    for _ in 0..num_iterations {
+        let start = tsc_start();
+        let end = tsc_end();
+        let ns = clock.delta_as_nanos(start, end);
+        overhead.push(ns);
+    }
+
+    overhead.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    overhead[overhead.len() / 2]
+}
+
 // Returns the duration of doing `num_iterations` of clock.raw()
 pub fn clock_read_overhead_sum(clock: &Clock, num_iterations: Count) -> Duration {
     let start = clock.raw();
