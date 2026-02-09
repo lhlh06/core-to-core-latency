@@ -6,7 +6,7 @@ pub fn black_box<T>(dummy: T) -> T {
     unsafe { std::ptr::read_volatile(&dummy) }
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", target_feature = "sse2"))]
 #[inline(always)]
 pub fn raw_fenced(clock: &Clock) -> u64 {
     use std::sync::atomic::compiler_fence;
