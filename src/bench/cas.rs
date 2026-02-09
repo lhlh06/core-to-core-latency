@@ -60,7 +60,7 @@ impl super::Bench for Bench {
 
                 state.barrier.wait();
                 let overhead =
-                    crate::utils::measure_overhead_ns(clock, num_round_trips.try_into().unwrap());
+                    crate::utils::measure_overhead_ns(clock, num_samples.try_into().unwrap());
                 state.start.store(true, Ordering::Release);
 
                 for _ in 0..num_samples {
