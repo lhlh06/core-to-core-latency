@@ -64,6 +64,7 @@ fn main() {
     eprintln!("{}", ansi_term::Color::Red.bold().paint("WARN macOS may ignore thread-CPU affinity (we can't select a CPU to run on). Results may be inaccurate"));
 
     let clock = Arc::new(Clock::new());
+    utils::assert_rdtsc_usable(&clock);
 
     for b in &args.bench {
         match b {

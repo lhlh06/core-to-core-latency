@@ -6,6 +6,22 @@ pub fn black_box<T>(dummy: T) -> T {
     unsafe { std::ptr::read_volatile(&dummy) }
 }
 
+#[cfg(target_arch = "x86_64")]
+#[inline(always)]
+pub fn raw_fenced(clock: &Clock) -> u64 {
+    use std::sync::atomic::compiler_fence;
+    compiler_fence(std::sync::atomic::Ordering::SeqCst);
+    unsafe {
+        core::arch::x86_64::_mm_lfence();
+    }
+    let t = clock.raw();
+    unsafe {
+        core::arch::x86_64::_mm_lfence();
+    }
+    compiler_fence(std::sync::atomic::Ordering::SeqCst);
+    t
+}
+
 pub fn delay_cycles(num_iterations: usize) {
     static VALUE: usize = 0;
     for _ in 0..num_iterations {
@@ -22,6 +38,21 @@ pub fn clock_read_overhead_sum(clock: &Clock, num_iterations: Count) -> Duration
     }
     let end = clock.raw();
     clock.delta(start, end)
+}
+
+/// Returns the duration of `Median` overhead of 2x[raw_fenced] and 1 read tsc clock
+pub fn measure_overhead_ns(clock: &Clock, num_iterations: usize) -> u64 {
+    let mut overhead = Vec::with_capacity(num_iterations);
+
+    for _ in 0..num_iterations {
+        let start = raw_fenced(clock);
+        let end = raw_fenced(clock);
+        let ns = clock.delta_as_nanos(start, end);
+        overhead.push(ns);
+    }
+
+    overhead.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    overhead[overhead.len() / 2]
 }
 
 // This big feature condition is on CpuId::default(), we'll use the same.

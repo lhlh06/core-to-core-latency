@@ -8,6 +8,7 @@ use super::Count;
 
 pub struct Bench {
     barrier: CachePadded<Barrier>,
+    start: CachePadded<AtomicBool>,
     owned_by_ping: CachePadded<AtomicBool>,
     owned_by_pong: CachePadded<AtomicBool>,
 }
@@ -16,6 +17,7 @@ impl Bench {
     pub fn new() -> Self {
         Self {
             barrier: CachePadded::new(Barrier::new(2)),
+            start: CachePadded::new(AtomicBool::new(false)),
             owned_by_ping: Default::default(),
             owned_by_pong: Default::default(),
         }
@@ -38,6 +40,11 @@ impl super::Bench for Bench {
             let pong = s.spawn(move |_| {
                 core_affinity::set_for_current(pong_core);
                 state.barrier.wait();
+
+                while !state.start.load(Ordering::Acquire) {
+                    core::hint::spin_loop();
+                }
+
                 let mut v = false;
                 for _ in 0..(num_round_trips * num_samples) {
                     // Acquire -> Release is important to enforce a causal dependency
@@ -52,10 +59,16 @@ impl super::Bench for Bench {
                 let mut results = Vec::with_capacity(num_samples as usize);
 
                 core_affinity::set_for_current(ping_core);
+
                 state.barrier.wait();
+                let overhead =
+                    crate::utils::measure_overhead_ns(clock, num_samples.try_into().unwrap());
+                state.start.store(true, Ordering::Release);
+
                 let mut v = true;
                 for _ in 0..num_samples {
-                    let start = clock.raw();
+                    // let start = clock.raw();
+                    let start = crate::utils::raw_fenced(clock);
                     for _ in 0..num_round_trips {
                         // Acquire -> Release is important to enforce a causal dependency
                         // This has no effect on x86
@@ -63,8 +76,10 @@ impl super::Bench for Bench {
                         state.owned_by_ping.store(v, Ordering::Release);
                         v = !v;
                     }
-                    let end = clock.raw();
-                    let duration = clock.delta(start, end).as_nanos();
+                    // let end = clock.raw();
+                    let end = crate::utils::raw_fenced(clock);
+                    let duration = clock.delta(start, end).as_nanos() as u64;
+                    let duration = duration.saturating_sub(overhead);
                     results.push(duration as f64 / num_round_trips as f64 / 2.0);
                 }
                 results

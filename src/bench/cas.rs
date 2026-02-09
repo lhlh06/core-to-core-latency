@@ -9,6 +9,7 @@ const PONG: bool = true;
 
 pub struct Bench {
     barrier: Barrier,
+    start: AtomicBool,
     flag: AtomicBool,
 }
 
@@ -16,6 +17,7 @@ impl Bench {
     pub fn new() -> Self {
         Self {
             barrier: Barrier::new(2),
+            start: AtomicBool::new(false),
             flag: AtomicBool::new(PING),
         }
     }
@@ -38,6 +40,10 @@ impl super::Bench for Bench {
                 core_affinity::set_for_current(pong_core);
 
                 state.barrier.wait();
+                while !state.start.load(Ordering::Acquire) {
+                    core::hint::spin_loop();
+                }
+
                 for _ in 0..(num_round_trips * num_samples) {
                     while state
                         .flag
@@ -53,9 +59,13 @@ impl super::Bench for Bench {
                 let mut results = Vec::with_capacity(num_samples as usize);
 
                 state.barrier.wait();
+                let overhead =
+                    crate::utils::measure_overhead_ns(clock, num_round_trips.try_into().unwrap());
+                state.start.store(true, Ordering::Release);
 
                 for _ in 0..num_samples {
-                    let start = clock.raw();
+                    // let start = clock.raw();
+                    let start = crate::utils::raw_fenced(clock);
                     for _ in 0..num_round_trips {
                         while state
                             .flag
@@ -63,8 +73,10 @@ impl super::Bench for Bench {
                             .is_err()
                         {}
                     }
-                    let end = clock.raw();
-                    let duration = clock.delta(start, end).as_nanos();
+                    // let end = clock.raw();
+                    let end = crate::utils::raw_fenced(clock);
+                    let duration = clock.delta(start, end).as_nanos() as u64;
+                    let duration = duration - overhead;
                     results.push(duration as f64 / num_round_trips as f64 / 2.0);
                 }
 
