@@ -55,17 +55,22 @@ pub fn tsc_end() -> u64 {
     }
 }
 
-pub fn measure_tsc_overhead_ns(clock: &Clock, num_iterations: usize) -> u64 {
+pub fn measure_tsc_overhead(num_iterations: usize) -> u64 {
     let mut overhead = Vec::with_capacity(num_iterations);
+
+    // warmup
+    for _ in 0..100 {
+        let _ = tsc_start();
+        let _ = tsc_end();
+    }
 
     for _ in 0..num_iterations {
         let start = tsc_start();
         let end = tsc_end();
-        let ns = clock.delta_as_nanos(start, end);
-        overhead.push(ns);
+        overhead.push(end.saturating_sub(start));
     }
 
-    overhead.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    overhead.sort_unstable();
     overhead[overhead.len() / 2]
 }
 
