@@ -59,7 +59,7 @@ impl super::Bench for Bench {
                 let mut results = Vec::with_capacity(num_samples as usize);
 
                 state.barrier.wait();
-                let overhead = crate::utils::measure_tsc_overhead(num_samples.try_into().unwrap());
+                let overhead_ticks = crate::utils::measure_tsc_overhead(num_samples.try_into().unwrap());
                 state.start.store(true, Ordering::Release);
 
                 for _ in 0..num_samples {
@@ -76,8 +76,9 @@ impl super::Bench for Bench {
                     // let end = clock.raw();
                     // let end = crate::utils::raw_fenced(clock);
                     let end = crate::utils::tsc_end();
-                    let duration =
-                        clock.delta(start, end.saturating_sub(overhead)).as_nanos() as u64;
+                    let ticks = end - start;
+                    let ticks = ticks.saturating_sub(overhead_ticks);
+                    let duration = clock.delta(0, ticks).as_nanos() as u64;
                     results.push(duration as f64 / num_round_trips as f64 / 2.0);
                 }
 
