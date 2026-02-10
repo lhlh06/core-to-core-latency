@@ -67,6 +67,9 @@ pub fn tsc_end() -> u64 {
 }
 
 pub fn measure_tsc_overhead(num_iterations: usize) -> u64 {
+    // better be 500 or larger
+    let num_iterations = num_iterations.max(500);
+
     let mut overhead = Vec::with_capacity(num_iterations);
 
     // warmup
