@@ -10,7 +10,7 @@ edition = "2021"
 exclude = ["/results"]
 
 [dependencies]
-core_affinity = "0.5"
+core_affinity = "0.8.3"
 quanta = "0.10"
 clap = { version = "3", features = ["derive"] }
 ndarray = "0.15"
